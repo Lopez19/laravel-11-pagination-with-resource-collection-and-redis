@@ -4,10 +4,7 @@ use App\Http\Resources\UserCollection;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
-// Route::get('/', function () {
-//     return view('welcome');
-// });
+use Illuminate\Support\Facades\Cache;
 
 Route::get('/', function (Request $request) {
 
@@ -15,7 +12,10 @@ Route::get('/', function (Request $request) {
     $search = $request->search;
     $limit = $request->limit ?? 10;
 
-    $users = User::getData($search, $isPaginate, $limit);
+    # Cache the result for 60 seconds
+    $users = Cache::remember('users', 60, function () use ($search, $isPaginate, $limit) {
+        return User::getData($search, $isPaginate, $limit);
+    });
 
     return UserCollection::make($users);
 });

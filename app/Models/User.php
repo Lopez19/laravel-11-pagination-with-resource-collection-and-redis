@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Cache;
 
 class User extends Authenticatable
 {
@@ -49,14 +50,25 @@ class User extends Authenticatable
         ];
     }
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saved(function ($model) {
+            Cache::forget('users');
+        });
+
+        static::deleted(function ($model) {
+            Cache::forget('users');
+        });
+    }
+
     public function scopeSearch(Builder $query, $search = null): Builder
     {
         $query = $query->select("id", "email", "name");
-
         if (!$search) {
             return $query;
         }
-
         return $query->where('name', 'like', '%' . $search . '%')
             ->orWhere('email', 'like', '%' . $search . '%');
     }
